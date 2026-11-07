@@ -18,33 +18,59 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 24px 16px;
     color: var(--ink);
   }
   .wrap {
+    position: relative;
     width: 100%;
     max-width: 560px;
     background: rgba(255,255,255,0.94);
     border-radius: 24px;
-    padding: 28px;
+    padding: 28px 22px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
   }
   h1 { text-align: center; font-size: 2rem; margin-bottom: 4px; }
-  .sub { text-align: center; color: #666; margin-bottom: 18px; font-size: .95rem; }
+  .sub { text-align: center; color: #666; margin-bottom: 14px; font-size: .95rem; }
 
-  .status { display: flex; justify-content: space-between; margin-bottom: 14px; gap: 8px; flex-wrap: wrap; }
-  .stat {
-    flex: 1; min-width: 100px; background: #f2f3fb; border-radius: 12px;
-    padding: 10px; text-align: center;
+  .sound-btn {
+    position: absolute; top: 14px; right: 14px;
+    width: 40px; height: 40px; padding: 0; border-radius: 50%;
+    background: #f2f3fb; color: #764ba2; font-size: 1.1rem;
   }
-  .stat .num { font-size: 1.5rem; font-weight: 700; color: #764ba2; }
-  .stat .label { font-size: .78rem; color: #777; }
+
+  /* 關卡選擇 */
+  .levels { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
+  .lv {
+    width: 54px; padding: 6px 0 4px; border-radius: 12px;
+    background: #f2f3fb; color: #764ba2; border: 2px solid transparent;
+    font-size: .95rem; line-height: 1.1;
+  }
+  .lv small { display: block; font-size: .62rem; color: #f5a623; min-height: .8rem; letter-spacing: -1px; }
+  .lv.current { border-color: #764ba2; background: #ece6fb; }
+  .lv:disabled { color: #bbb; cursor: not-allowed; filter: none; transform: none; }
+
+  .level-info {
+    background: linear-gradient(135deg, #fff6e0, #ffe9f3);
+    border-radius: 14px; padding: 10px 14px; margin-bottom: 12px; text-align: center;
+  }
+  .level-info .lv-name { font-weight: 800; font-size: 1.1rem; color: #c44569; }
+  .level-info .lv-desc { font-size: .88rem; color: #666; margin-top: 2px; }
+
+  .status { display: flex; justify-content: space-between; margin-bottom: 14px; gap: 8px; }
+  .stat {
+    flex: 1; min-width: 0; background: #f2f3fb; border-radius: 12px;
+    padding: 8px 4px; text-align: center;
+  }
+  .stat .num { font-size: 1.35rem; font-weight: 700; color: #764ba2; }
+  .stat .num.danger { color: #e53935; }
+  .stat .label { font-size: .74rem; color: #777; }
 
   .board {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: 6px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
   }
   .cell {
     aspect-ratio: 1;
@@ -56,7 +82,7 @@
     justify-content: center;
     font-size: 1.4rem;
     font-weight: 700;
-    transition: all .15s ease;
+    transition: background .15s ease, border-color .15s ease;
     position: relative;
     user-select: none;
   }
@@ -67,27 +93,40 @@
     font-weight: 800;
     aspect-ratio: auto;
   }
+  .cell.target { border: 2px dashed #f78fb3; background: #fff7fb; }
   .cell.marked {
     background: #ffe08a;
-    border-color: #f7b731;
+    border: 2px solid #f7b731;
     color: #8a5a00;
   }
   .cell.free {
     background: #ffe9f3;
-    border-color: #f78fb3;
+    border: 2px solid #f78fb3;
     color: #c44569;
     font-size: .85rem;
   }
-  .cell.bingo {
+  .cell.got, .cell.bingo {
     background: #4caf50;
-    border-color: #388e3c;
+    border: 2px solid #388e3c;
     color: #fff;
-    animation: pop .4s ease;
   }
+  .cell.pop { animation: pop .4s ease; }
+  .cell.hot { animation: hot 1s ease-in-out infinite; border-color: #ff7043; }
+  .cell.pickable { cursor: pointer; animation: wiggle .6s ease-in-out infinite; border-color: #f5a623; }
+  .cell.pickable:hover { background: #fff3c4; }
   @keyframes pop {
     0% { transform: scale(1); }
     50% { transform: scale(1.18); }
     100% { transform: scale(1); }
+  }
+  @keyframes hot {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(255,112,67,.25); }
+    50% { box-shadow: 0 0 0 7px rgba(255,112,67,.5); }
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0); }
+    25% { transform: rotate(-4deg); }
+    75% { transform: rotate(4deg); }
   }
 
   .letter-B { color: #e53935; }
@@ -101,7 +140,7 @@
     align-items: center;
     justify-content: center;
     gap: 14px;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
     min-height: 92px;
   }
   .current-ball {
@@ -113,13 +152,33 @@
     box-shadow: 0 6px 18px rgba(0,0,0,.25);
     animation: bounce .35s ease;
   }
+  .current-ball.rolling { animation: spin .25s linear infinite; opacity: .85; }
+  .current-ball.golden {
+    background: radial-gradient(circle at 30% 30%, #fff8d6, #f5a623);
+    box-shadow: 0 0 24px rgba(245,166,35,.8);
+  }
   .current-ball .ball-letter { font-size: .7rem; font-weight: 600; }
   @keyframes bounce {
     0% { transform: translateY(-30px) scale(.7); opacity: 0; }
     60% { transform: translateY(4px) scale(1.05); }
     100% { transform: translateY(0) scale(1); opacity: 1; }
   }
+  @keyframes spin {
+    0% { transform: rotate(-12deg) scale(.95); }
+    50% { transform: rotate(12deg) scale(1.03); }
+    100% { transform: rotate(-12deg) scale(.95); }
+  }
   .ball-placeholder { color: #aaa; font-size: 1rem; }
+
+  .msg {
+    text-align: center; font-weight: 700; color: #764ba2;
+    min-height: 1.5em; margin-bottom: 12px; font-size: .98rem;
+  }
+  .wild {
+    display: none; text-align: center; margin-bottom: 12px;
+    background: #fff3c4; border-radius: 12px; padding: 8px; color: #8a5a00; font-size: .9rem;
+  }
+  .wild.show { display: block; }
 
   .controls { display: flex; gap: 10px; margin-bottom: 18px; }
   button {
@@ -130,6 +189,7 @@
     font-weight: 700;
     cursor: pointer;
     color: #fff;
+    font-family: inherit;
     transition: transform .1s ease, filter .1s ease;
   }
   .controls button { flex: 1; }
@@ -151,23 +211,25 @@
     display: inline-flex; align-items: center; justify-content: center;
     font-size: .82rem; font-weight: 700; padding: 0 5px;
   }
+  .ball.hit { background: #ffe08a; color: #8a5a00; border-color: #f7b731; }
 
   .overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.55);
     display: none; align-items: center; justify-content: center; z-index: 50;
+    padding: 16px;
   }
   .overlay.show { display: flex; }
   .win-box {
-    background: #fff; border-radius: 20px; padding: 30px 40px; text-align: center;
+    background: #fff; border-radius: 20px; padding: 28px 32px; text-align: center;
     animation: pop .4s ease;
-    max-width: 90vw;
+    width: 100%; max-width: 360px;
   }
-  .win-box h2 { font-size: 2.2rem; color: #e53935; margin-bottom: 6px; }
+  .win-box h2 { font-size: 2rem; color: #e53935; margin-bottom: 6px; }
+  .win-box .stars { font-size: 2.2rem; color: #f5a623; letter-spacing: 4px; margin-bottom: 6px; }
   .win-box p { color: #555; margin-bottom: 14px; }
   .win-box button {
     display: block; width: 100%; max-width: 220px; margin: 10px auto 0;
-    padding: 12px; border-radius: 12px; font-size: 1rem; font-weight: 700;
-    cursor: pointer; color: #fff;
+    padding: 12px; border-radius: 12px; font-size: 1rem;
   }
   .win-box .primary { background: linear-gradient(135deg,#43a047,#2e7d32); }
   .win-box .ghost { background:#ececec; color:#555; }
@@ -179,13 +241,22 @@
 </head>
 <body>
   <div class="wrap">
+    <button class="sound-btn" id="soundBtn" title="音效開關" aria-label="音效開關">🔊</button>
     <h1>🎉 賓果 BINGO</h1>
-    <div class="sub">抽號碼、圈起來，連成線就贏！</div>
+    <div class="sub">在限定次數內完成目標圖形就過關！</div>
+
+    <div class="levels" id="levels"></div>
+
+    <div class="level-info">
+      <div class="lv-name" id="lvName"></div>
+      <div class="lv-desc" id="lvDesc"></div>
+    </div>
 
     <div class="status">
       <div class="stat"><div class="num" id="drawnCount">0</div><div class="label">已抽</div></div>
-      <div class="stat"><div class="num" id="remainCount">75</div><div class="label">剩餘</div></div>
-      <div class="stat"><div class="num" id="lineCount">0</div><div class="label">連線數</div></div>
+      <div class="stat"><div class="num" id="leftCount">0</div><div class="label">剩餘次數</div></div>
+      <div class="stat"><div class="num" id="progress">0</div><div class="label">目標進度</div></div>
+      <div class="stat"><div class="num" id="comboCount">0</div><div class="label">連續命中</div></div>
     </div>
 
     <div class="board" id="board"></div>
@@ -193,22 +264,25 @@
     <div class="ball-display" id="ballDisplay">
       <div class="ball-placeholder">點擊「抽號碼」開始</div>
     </div>
+    <div class="msg" id="msg"></div>
+    <div class="wild" id="wild"></div>
 
     <div class="controls">
       <button id="drawBtn">抽號碼 🎱</button>
-      <button id="newBtn">新遊戲 🔄</button>
+      <button id="newBtn">重玩本關 🔄</button>
     </div>
 
-    <div class="history-title">已抽號碼</div>
+    <div class="history-title">已抽號碼（黃色＝命中）</div>
     <div class="history" id="history"></div>
   </div>
 
   <div class="overlay" id="overlay">
     <div class="win-box">
-      <h2>賓果！🎊</h2>
-      <p id="winMsg"></p>
-      <button class="primary" onclick="newGame()">再玩一局 🔄</button>
-      <button class="ghost" onclick="closeWin()">繼續玩 ▶</button>
+      <h2 id="ovTitle"></h2>
+      <div class="stars" id="ovStars"></div>
+      <p id="ovMsg"></p>
+      <button class="primary" id="ovPrimary"></button>
+      <button class="ghost" id="ovGhost"></button>
     </div>
   </div>
 
@@ -216,125 +290,326 @@
 const LETTERS = ['B','I','N','G','O'];
 const RANGES = { B:[1,15], I:[16,30], N:[31,45], G:[46,60], O:[61,75] };
 const LETTER_OF = n => n <= 15 ? 'B' : n <= 30 ? 'I' : n <= 45 ? 'N' : n <= 60 ? 'G' : 'O';
+const GOLDEN_CHANCE = 0.1; // 每次抽號有 10% 機率是金球，送 1 顆萬用星
 
-let card, marked, remaining, drawnBalls;
+// 關卡設定：type 'lines' 需完成 need 條線；type 'pattern' 需圈滿 cells 指定格
+const LEVELS = [
+  { name: '暖身賽',  desc: '完成任意 1 條連線',           type: 'lines',   need: 1, limit: 35 },
+  { name: '四角落',  desc: '圈滿卡片的 4 個角',           type: 'pattern', cells: [0, 4, 20, 24], limit: 40 },
+  { name: '雙線',    desc: '完成任意 2 條連線',           type: 'lines',   need: 2, limit: 40 },
+  { name: '三線',    desc: '完成任意 3 條連線',           type: 'lines',   need: 3, limit: 45 },
+  { name: '大十字',  desc: '圈滿中間的橫線和直線',         type: 'pattern', cells: [10, 11, 12, 13, 14, 2, 7, 17, 22], limit: 50 },
+  { name: '大叉叉',  desc: '圈滿兩條對角線',               type: 'pattern', cells: [0, 6, 12, 18, 24, 4, 8, 16, 20], limit: 50 },
+  { name: '外框',    desc: '圈滿最外圈 16 格',             type: 'pattern', cells: [0, 1, 2, 3, 4, 5, 9, 10, 14, 15, 19, 20, 21, 22, 23, 24], limit: 62 },
+  { name: '全滿王',  desc: '整張卡片全部圈滿！',           type: 'pattern', cells: Array.from({ length: 25 }, (_, i) => i), limit: 66 },
+];
+
+const CHEER_MISS = ['號碼飄走了～下一顆吧 🎈', '還沒輪到你的數字 🌈', '沒關係，耐心等等 ☁️', '別急，好戲在後頭 🎬', '這顆不是你的菜 🥬'];
+const CHEER_HIT  = ['命中！🎯', '好耶！圈起來啦 ✨', '手氣超棒！🍀', '就是你了！💥', '漂亮！👏'];
+const WIN_TITLES = ['過關啦！🏆', '太神啦！🎊', '手氣爆棚！💎', '你是賓果王！👑'];
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+let levelIdx = 0;
+let card, marked, remaining, drawnBalls, hits, wild, combo, finished, busy = false, gen = 0;
+let justPopped = new Set();
 const announced = new Set();
 
-function range(lo, hi){ const a = []; for(let i = lo; i <= hi; i++) a.push(i); return a; }
-function shuffle(a){ for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+/* ---------- 進度儲存（只存在本機瀏覽器） ---------- */
+const SAVE_KEY = 'bingo-progress-v1';
+let save = { unlocked: 1, best: {} };
+try {
+  const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+  if (s && typeof s.unlocked === 'number') save = { unlocked: s.unlocked, best: s.best || {} };
+} catch (e) {}
+function persist(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
 
-function newGame(){
-  card = [];
-  for(let c = 0; c < 5; c++){
-    const [lo, hi] = RANGES[LETTERS[c]];
-    const nums = shuffle(range(lo, hi));
-    for(let r = 0; r < 5; r++) card[r * 5 + c] = nums[r];
-  }
-  marked = new Array(25).fill(false);
-  marked[12] = true; // 中央 FREE 格
-  remaining = shuffle(range(1, 75));
-  drawnBalls = [];
-  announced.clear();
-  document.getElementById('overlay').classList.remove('show');
-  render();
+/* ---------- 音效（Web Audio 合成，不需音檔） ---------- */
+let soundOn = true, audioCtx = null;
+function beep(freq, dur = 0.12, type = 'sine', vol = 0.15, when = 0){
+  if (!soundOn) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audioCtx.currentTime + when;
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur);
+  } catch (e) {}
 }
+const sfx = {
+  tick(){ beep(600, 0.04, 'square', 0.04); },
+  hit(){ beep(880, .15); beep(1320, .2, 'sine', .15, .08); },
+  miss(){ beep(300, .12, 'triangle', .1); },
+  star(){ [988, 1319, 1568].forEach((f, i) => beep(f, .15, 'sine', .12, i * .07)); },
+  line(){ [659, 784, 988].forEach((f, i) => beep(f, .18, 'triangle', .15, i * .09)); },
+  win(){ [523, 659, 784, 1046, 1318].forEach((f, i) => beep(f, .28, 'triangle', .18, i * .12)); },
+  lose(){ [392, 330, 262].forEach((f, i) => beep(f, .3, 'sawtooth', .07, i * .18)); },
+};
+
+/* ---------- 工具 ---------- */
+function range(lo, hi){ const a = []; for (let i = lo; i <= hi; i++) a.push(i); return a; }
+function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+const $ = id => document.getElementById(id);
+function setMsg(t){ $('msg').textContent = t; }
 
 function allLines(){
   const lines = [];
-  for(let r = 0; r < 5; r++) lines.push({ id: 'r' + r, idx: Array.from({ length: 5 }, (_, c) => r * 5 + c) });
-  for(let c = 0; c < 5; c++) lines.push({ id: 'c' + c, idx: Array.from({ length: 5 }, (_, r) => r * 5 + c) });
+  for (let r = 0; r < 5; r++) lines.push({ id: 'r' + r, idx: Array.from({ length: 5 }, (_, c) => r * 5 + c) });
+  for (let c = 0; c < 5; c++) lines.push({ id: 'c' + c, idx: Array.from({ length: 5 }, (_, r) => r * 5 + c) });
   lines.push({ id: 'd1', idx: [0, 6, 12, 18, 24] });
   lines.push({ id: 'd2', idx: [4, 8, 12, 16, 20] });
   return lines;
 }
+const LINES = allLines();
+const completedLines = () => LINES.filter(l => l.idx.every(i => marked[i]));
 
-function completedLines(){
-  return allLines().filter(l => l.idx.every(i => marked[i]));
+const level = () => LEVELS[levelIdx];
+function goalProgress(){
+  const L = level();
+  if (L.type === 'lines') return { have: Math.min(completedLines().length, L.need), need: L.need, unit: '條' };
+  return { have: L.cells.filter(i => marked[i]).length, need: L.cells.length, unit: '格' };
 }
+const goalDone = () => { const p = goalProgress(); return p.have >= p.need; };
 
-function checkBingo(){
-  const done = completedLines();
-  const newLines = done.filter(l => !announced.has(l.id));
-  if(newLines.length){
-    newLines.forEach(l => announced.add(l.id));
-    document.getElementById('lineCount').textContent = done.length;
-    document.getElementById('winMsg').textContent =
-      done.length === 1 ? '恭喜！你完成了一條連線！' : '太厲害了！你已完成 ' + done.length + ' 條連線！';
-    document.getElementById('overlay').classList.add('show');
-    launchConfetti();
+// 「只差一點」的格子：連線關卡＝只差 1 格的線；圖形關卡＝剩 2 格以內時的缺格
+function hotCells(){
+  const L = level(), hot = new Set();
+  if (L.type === 'lines'){
+    LINES.forEach(l => { const miss = l.idx.filter(i => !marked[i]); if (miss.length === 1) hot.add(miss[0]); });
   } else {
-    document.getElementById('lineCount').textContent = done.length;
+    const miss = L.cells.filter(i => !marked[i]);
+    if (miss.length <= 2) miss.forEach(i => hot.add(i));
   }
-  highlightLines(done);
+  return hot;
 }
 
-function highlightLines(done){
-  const board = document.getElementById('board');
-  board.querySelectorAll('.cell[data-idx]').forEach(el => el.classList.remove('bingo'));
-  done.forEach(l => l.idx.forEach(i => {
-    const el = board.querySelector('.cell[data-idx="' + i + '"]');
-    if(el) el.classList.add('bingo');
-  }));
+/* ---------- 關卡流程 ---------- */
+function startLevel(i){
+  levelIdx = i;
+  gen++; busy = false;
+  card = [];
+  for (let c = 0; c < 5; c++){
+    const [lo, hi] = RANGES[LETTERS[c]];
+    const nums = shuffle(range(lo, hi));
+    for (let r = 0; r < 5; r++) card[r * 5 + c] = nums[r];
+  }
+  marked = new Array(25).fill(false);
+  marked[12] = true; // 中央 FREE 格
+  remaining = shuffle(range(1, 75));
+  drawnBalls = []; hits = new Set();
+  wild = 0; combo = 0; finished = false;
+  announced.clear(); justPopped = new Set();
+  $('overlay').classList.remove('show');
+  $('ballDisplay').innerHTML = '<div class="ball-placeholder">點擊「抽號碼」或按空白鍵開始</div>';
+  const L = level();
+  $('lvName').textContent = '第 ' + (i + 1) + ' 關：' + L.name;
+  $('lvDesc').textContent = L.desc + '｜限 ' + L.limit + ' 次抽號' + (L.type === 'pattern' ? '（虛線格＝目標）' : '');
+  setMsg('🎯 準備好了嗎？金色球會送你萬用星 ⭐');
+  render();
 }
 
-function draw(){
-  if(!remaining.length) return;
+async function draw(){
+  if (busy || finished || drawnBalls.length >= level().limit || !remaining.length) return;
+  busy = true;
+  const myGen = gen;
+  $('drawBtn').disabled = true;
+  setMsg('🎱 號碼滾動中…');
+
+  // 滾動動畫：快速閃過幾個號碼，越來越慢
+  const bd = $('ballDisplay');
+  for (let i = 0; i < 10; i++){
+    const fake = remaining[Math.floor(Math.random() * remaining.length)];
+    bd.innerHTML = '<div class="current-ball rolling"><span class="ball-letter">' + LETTER_OF(fake) + '</span>' + fake + '</div>';
+    sfx.tick();
+    await sleep(50 + i * 15);
+    if (myGen !== gen) return; // 期間按了重玩或換關
+  }
+
   const ball = remaining.pop();
+  const golden = Math.random() < GOLDEN_CHANCE;
   drawnBalls.push(ball);
   const idx = card.indexOf(ball);
-  if(idx !== -1) marked[idx] = true;
+  const hit = idx !== -1;
+  justPopped = new Set();
+  if (hit){ marked[idx] = true; hits.add(ball); justPopped.add(idx); combo++; } else { combo = 0; }
+  if (golden) wild++;
+
+  bd.innerHTML = '<div class="current-ball' + (golden ? ' golden' : '') + '"><span class="ball-letter">' +
+    (golden ? '⭐ ' : '') + LETTER_OF(ball) + '</span>' + ball + '</div>';
+
+  let text = hit ? pick(CHEER_HIT) : pick(CHEER_MISS);
+  if (hit) sfx.hit(); else sfx.miss();
+  if (combo >= 2) text = '🔥 連續命中 ×' + combo + '！' + (combo >= 3 ? '手感火燙！' : '');
+  if (golden){ text += '　⭐ 金球！獲得萬用星'; setTimeout(() => sfx.star(), 150); }
+  setMsg(text);
+
+  busy = false;
+  afterChange();
+}
+
+// 使用萬用星：點任一未圈的格子
+function useWild(i){
+  if (!wild || busy || finished || marked[i]) return;
+  wild--;
+  marked[i] = true;
+  justPopped = new Set([i]);
+  sfx.star();
+  setMsg('⭐ 萬用星發動！');
+  afterChange();
+}
+
+function afterChange(){
+  const L = level();
+  if (L.type === 'lines'){
+    const done = completedLines();
+    const fresh = done.filter(l => !announced.has(l.id));
+    fresh.forEach(l => { announced.add(l.id); l.idx.forEach(i => justPopped.add(i)); });
+    if (fresh.length && !goalDone()){
+      sfx.line();
+      setMsg('✅ 完成一條線！還差 ' + (L.need - Math.min(done.length, L.need)) + ' 條');
+      launchConfetti(25);
+    }
+  }
   render();
-  checkBingo();
+
+  if (goalDone()) return levelClear();
+  if (drawnBalls.length >= L.limit){
+    if (wild > 0) setMsg('⌛ 次數用完了！快用萬用星救援 ⭐');
+    else return levelFail();
+  } else if (hotCells().size && !$('msg').textContent.includes('完成一條線')){
+    setMsg($('msg').textContent + '　🔥 只差一點點！');
+  }
+}
+
+function starsFor(used, limit){
+  if (used <= limit - 15) return 3;
+  if (used <= limit - 7) return 2;
+  return 1;
+}
+
+function levelClear(){
+  finished = true;
+  const used = drawnBalls.length, L = level();
+  const s = starsFor(used, L.limit);
+  save.best[levelIdx] = Math.max(save.best[levelIdx] || 0, s);
+  save.unlocked = Math.max(save.unlocked, Math.min(levelIdx + 2, LEVELS.length));
+  persist();
+  render();
+  sfx.win();
+  launchConfetti(100);
+  const last = levelIdx === LEVELS.length - 1;
+  showOverlay({
+    title: last ? '全部通關！👑' : pick(WIN_TITLES),
+    stars: '★'.repeat(s) + '☆'.repeat(3 - s),
+    msg: '第 ' + (levelIdx + 1) + ' 關「' + L.name + '」完成！只用了 ' + used + ' / ' + L.limit + ' 次抽號。' +
+         (s < 3 ? '（用更少次數可拿更多星）' : ''),
+    primary: last ? ['再挑戰一次 🔄', () => startLevel(levelIdx)] : ['下一關 ▶', () => startLevel(levelIdx + 1)],
+    ghost: ['重玩本關', () => startLevel(levelIdx)],
+  });
+}
+
+function levelFail(){
+  finished = true;
+  render();
+  sfx.lose();
+  const p = goalProgress();
+  showOverlay({
+    title: '差一點點！😵',
+    stars: '',
+    msg: '目標進度 ' + p.have + ' / ' + p.need + ' ' + p.unit + '，抽號次數用完了。再試一次，運氣會站在你這邊！',
+    primary: ['再試一次 🔄', () => startLevel(levelIdx)],
+    ghost: ['看看卡片', closeOverlay],
+  });
+}
+
+function showOverlay(o){
+  $('ovTitle').textContent = o.title;
+  $('ovStars').textContent = o.stars;
+  $('ovMsg').textContent = o.msg;
+  $('ovPrimary').textContent = o.primary[0];
+  $('ovPrimary').onclick = o.primary[1];
+  $('ovGhost').textContent = o.ghost[0];
+  $('ovGhost').onclick = o.ghost[1];
+  $('overlay').classList.add('show');
+}
+function closeOverlay(){ $('overlay').classList.remove('show'); }
+
+/* ---------- 畫面 ---------- */
+function renderLevels(){
+  const box = $('levels');
+  box.innerHTML = '';
+  LEVELS.forEach((L, i) => {
+    const b = document.createElement('button');
+    b.className = 'lv' + (i === levelIdx ? ' current' : '');
+    const locked = i + 1 > save.unlocked;
+    b.disabled = locked;
+    b.title = L.name + '：' + L.desc;
+    const best = save.best[i] || 0;
+    b.innerHTML = (locked ? '🔒' : (i + 1)) + '<small>' + (best ? '★'.repeat(best) : '') + '</small>';
+    b.addEventListener('click', () => startLevel(i));
+    box.appendChild(b);
+  });
 }
 
 function render(){
-  const board = document.getElementById('board');
-  board.innerHTML = '';
+  renderLevels();
+  const L = level();
+  const targets = new Set(L.type === 'pattern' ? L.cells : []);
+  const bingoCells = new Set();
+  if (L.type === 'lines') completedLines().forEach(l => l.idx.forEach(i => bingoCells.add(i)));
+  const hot = finished ? new Set() : hotCells();
 
-  LETTERS.forEach(L => {
+  const board = $('board');
+  board.innerHTML = '';
+  LETTERS.forEach(Lt => {
     const el = document.createElement('div');
-    el.className = 'cell letter letter-' + L;
-    el.textContent = L;
+    el.className = 'cell letter letter-' + Lt;
+    el.textContent = Lt;
     board.appendChild(el);
   });
-
-  for(let i = 0; i < 25; i++){
+  for (let i = 0; i < 25; i++){
     const el = document.createElement('div');
     el.dataset.idx = i;
-    if(i === 12){
-      el.className = 'cell free';
-      el.textContent = 'FREE';
-    } else {
-      el.className = 'cell num';
-      el.textContent = card[i];
-      if(marked[i]) el.classList.add('marked');
-    }
+    const cls = ['cell'];
+    if (i === 12){ cls.push('free'); el.textContent = 'FREE'; }
+    else { cls.push('num'); el.textContent = card[i]; }
+    if (targets.has(i)) cls.push(marked[i] ? 'got' : 'target');
+    else if (i !== 12 && marked[i]) cls.push('marked');
+    if (bingoCells.has(i)) cls.push('bingo');
+    if (justPopped.has(i)) cls.push('pop');
+    if (hot.has(i)) cls.push('hot');
+    if (wild && !finished && !marked[i]) cls.push('pickable');
+    el.className = cls.join(' ');
     board.appendChild(el);
   }
+  justPopped = new Set();
 
-  const bd = document.getElementById('ballDisplay');
-  if(drawnBalls.length){
-    const last = drawnBalls[drawnBalls.length - 1];
-    bd.innerHTML = '<div class="current-ball"><span class="ball-letter">' + LETTER_OF(last) + '</span>' + last + '</div>';
-  }
-
-  const h = document.getElementById('history');
+  const h = $('history');
   const sorted = [...drawnBalls].sort((a, b) => a - b);
-  h.innerHTML = sorted.map(n => '<span class="ball">' + LETTER_OF(n) + n + '</span>').join('');
-  h.scrollTop = h.scrollHeight;
+  h.innerHTML = sorted.map(n => '<span class="ball' + (hits.has(n) ? ' hit' : '') + '">' + LETTER_OF(n) + n + '</span>').join('');
 
-  document.getElementById('drawnCount').textContent = drawnBalls.length;
-  document.getElementById('remainCount').textContent = remaining.length;
-  document.getElementById('drawBtn').disabled = remaining.length === 0;
+  const left = L.limit - drawnBalls.length;
+  const p = goalProgress();
+  $('drawnCount').textContent = drawnBalls.length;
+  $('leftCount').textContent = left;
+  $('leftCount').classList.toggle('danger', left <= 5);
+  $('progress').textContent = p.have + '/' + p.need;
+  $('comboCount').textContent = combo;
+  $('drawBtn').disabled = busy || finished || left <= 0;
+
+  const w = $('wild');
+  w.classList.toggle('show', wild > 0 && !finished);
+  w.textContent = '⭐ 萬用星 ×' + wild + '：點卡片上任一個還沒圈的格子，直接圈起來！';
 }
 
-function closeWin(){
-  document.getElementById('overlay').classList.remove('show');
-}
-
-function launchConfetti(){
+function launchConfetti(count = 80){
   const colors = ['#e53935','#fb8c00','#fdd835','#43a047','#1e88e5','#8e24aa'];
-  for(let i = 0; i < 80; i++){
+  for (let i = 0; i < count; i++){
     const p = document.createElement('div');
     p.style.position = 'fixed';
     p.style.top = '-10px';
@@ -352,16 +627,27 @@ function launchConfetti(){
   }
 }
 
-document.getElementById('drawBtn').addEventListener('click', draw);
-document.getElementById('newBtn').addEventListener('click', newGame);
+/* ---------- 事件 ---------- */
+$('drawBtn').addEventListener('click', draw);
+$('newBtn').addEventListener('click', () => startLevel(levelIdx));
+$('board').addEventListener('click', e => {
+  const el = e.target.closest('.cell[data-idx]');
+  if (el) useWild(Number(el.dataset.idx));
+});
+$('soundBtn').addEventListener('click', e => {
+  soundOn = !soundOn;
+  e.currentTarget.textContent = soundOn ? '🔊' : '🔇';
+  if (soundOn) sfx.tick();
+});
 document.addEventListener('keydown', e => {
-  if(e.code === 'Space' || e.key === ' '){
+  if (e.code === 'Space' || e.key === ' '){
     e.preventDefault();
-    if(!document.getElementById('overlay').classList.contains('show')) draw();
+    if (!$('overlay').classList.contains('show')) draw();
   }
 });
 
-newGame();
+// 從最新解鎖的關卡開始
+startLevel(Math.min(save.unlocked, LEVELS.length) - 1);
 </script>
 </body>
 </html>
