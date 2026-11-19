@@ -40,11 +40,11 @@
   }
 
   /* 關卡選擇 */
-  .levels { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
+  .levels { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
   .lv {
-    width: 54px; padding: 6px 0 4px; border-radius: 12px;
+    width: 46px; padding: 5px 0 3px; border-radius: 10px;
     background: #f2f3fb; color: #764ba2; border: 2px solid transparent;
-    font-size: .95rem; line-height: 1.1;
+    font-size: .88rem; line-height: 1.1;
   }
   .lv small { display: block; font-size: .62rem; color: #f5a623; min-height: .8rem; letter-spacing: -1px; }
   .lv.current { border-color: #764ba2; background: #ece6fb; }
@@ -310,6 +310,15 @@ const LEVELS = [
   { name: 'H 字',    desc: '左右兩條直線＋中間橫線',       type: 'pattern', cells: [0, 5, 10, 15, 20, 4, 9, 14, 19, 24, 11, 12, 13], limit: 56 },
   { name: '棋盤',    desc: '圈滿西洋棋盤的 13 格',         type: 'pattern', cells: [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24], limit: 55 },
   { name: '愛心',    desc: '圈出一顆愛心 ❤️',               type: 'pattern', cells: [1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 22], limit: 58 },
+  // 第 16 關起：進階圖形
+  { name: '閃電',    desc: '圈出一道閃電 ⚡',               type: 'pattern', cells: [3, 7, 11, 12, 13, 17, 21], limit: 40 },
+  { name: '中心方塊', desc: '圈滿正中央的 3×3 方塊',        type: 'pattern', cells: [6, 7, 8, 11, 12, 13, 16, 17, 18], limit: 46 },
+  { name: '箭頭',    desc: '圈出一支往上的箭頭 ⬆️',         type: 'pattern', cells: [2, 6, 7, 8, 10, 12, 14, 17, 22], limit: 46 },
+  { name: '五線',    desc: '完成任意 5 條連線',           type: 'lines',   need: 5, limit: 50 },
+  { name: 'Z 字',    desc: '最上排＋斜線＋最下排',         type: 'pattern', cells: [0, 1, 2, 3, 4, 8, 12, 16, 20, 21, 22, 23, 24], limit: 54 },
+  { name: '斑馬紋',  desc: '圈滿第 1、3、5 排',           type: 'pattern', cells: [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24], limit: 58 },
+  { name: '王字',    desc: '三條橫線＋中間直線',           type: 'pattern', cells: [0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 7, 17], limit: 60 },
+  { name: '米字',    desc: '十字＋兩條對角線',             type: 'pattern', cells: [10, 11, 12, 13, 14, 2, 7, 17, 22, 0, 6, 18, 24, 4, 8, 16, 20], limit: 60 },
   { name: '全滿王',  desc: '最終關：整張卡片全部圈滿！',   type: 'pattern', cells: Array.from({ length: 25 }, (_, i) => i), limit: 66 },
 ];
 
@@ -325,14 +334,22 @@ const announced = new Set();
 
 /* ---------- 進度儲存（只存在本機瀏覽器） ---------- */
 const SAVE_KEY = 'bingo-progress-v1';
-let save = { v: 2, unlocked: 1, best: {} };
+const SAVE_VERSION = 3;
+let save = { v: SAVE_VERSION, unlocked: 1, best: {} };
 try {
   const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
   if (s && typeof s.unlocked === 'number') save = { v: s.v, unlocked: s.unlocked, best: s.best || {} };
-  // 舊版（只有 8 關）第 8 關是全滿王，現在移到最後一關：把它的星數搬過去
-  if (s && s.v !== 2){
-    if (save.best[7]) { save.best[15] = save.best[7]; delete save.best[7]; }
-    save.v = 2;
+  // 全滿王一直是最後一關，關卡增加後位置會變：把舊存檔中全滿王的星數搬到目前的最後一關
+  // 存檔版本 v1＝8 關（第 8 關）、v2＝16 關（第 16 關）、v3＝24 關（第 24 關）
+  const FULL_IDX_BY_VERSION = { 1: 7, 2: 15 };
+  if (s && s.v !== SAVE_VERSION){
+    const from = FULL_IDX_BY_VERSION[s.v || 1];
+    const last = LEVELS.length - 1;
+    if (from !== undefined && from !== last && save.best[from]){
+      save.best[last] = save.best[from];
+      delete save.best[from];
+    }
+    save.v = SAVE_VERSION;
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {}
   }
 } catch (e) {}
