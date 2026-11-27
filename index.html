@@ -572,19 +572,36 @@ function showOverlay(o){
 function closeOverlay(){ $('overlay').classList.remove('show'); }
 
 /* ---------- 畫面 ---------- */
+// 關卡按鈕與卡片格子只在載入時建立一次，之後 render() 只更新內容與 class，
+// 避免每次抽號重建節點（會讓閃爍／搖擺動畫從頭開始，也會讓鍵盤焦點消失）
+const levelBtns = LEVELS.map((L, i) => {
+  const b = document.createElement('button');
+  b.title = L.name + '：' + L.desc;
+  b.addEventListener('click', () => startLevel(i));
+  $('levels').appendChild(b);
+  return b;
+});
+LETTERS.forEach(Lt => {
+  const el = document.createElement('div');
+  el.className = 'cell letter letter-' + Lt;
+  el.textContent = Lt;
+  $('board').appendChild(el);
+});
+const cellEls = Array.from({ length: 25 }, (_, i) => {
+  const el = document.createElement('div');
+  el.dataset.idx = i;
+  $('board').appendChild(el);
+  return el;
+});
+
 function renderLevels(){
-  const box = $('levels');
-  box.innerHTML = '';
-  LEVELS.forEach((L, i) => {
-    const b = document.createElement('button');
-    b.className = 'lv' + (i === levelIdx ? ' current' : '');
+  levelBtns.forEach((b, i) => {
     const locked = i + 1 > save.unlocked;
-    b.disabled = locked;
-    b.title = L.name + '：' + L.desc;
     const best = save.best[i] || 0;
-    b.innerHTML = (locked ? '🔒' : (i + 1)) + '<small>' + (best ? '★'.repeat(best) : '') + '</small>';
-    b.addEventListener('click', () => startLevel(i));
-    box.appendChild(b);
+    b.className = 'lv' + (i === levelIdx ? ' current' : '');
+    b.disabled = locked;
+    const html = (locked ? '🔒' : (i + 1)) + '<small>' + (best ? '★'.repeat(best) : '') + '</small>';
+    if (b.dataset.html !== html){ b.innerHTML = html; b.dataset.html = html; }
   });
 }
 
@@ -596,29 +613,20 @@ function render(){
   if (L.type === 'lines') completedLines().forEach(l => l.idx.forEach(i => bingoCells.add(i)));
   const hot = finished ? new Set() : hotCells();
 
-  const board = $('board');
-  board.innerHTML = '';
-  LETTERS.forEach(Lt => {
-    const el = document.createElement('div');
-    el.className = 'cell letter letter-' + Lt;
-    el.textContent = Lt;
-    board.appendChild(el);
-  });
-  for (let i = 0; i < 25; i++){
-    const el = document.createElement('div');
-    el.dataset.idx = i;
+  cellEls.forEach((el, i) => {
     const cls = ['cell'];
-    if (i === 12){ cls.push('free'); el.textContent = 'FREE'; }
-    else { cls.push('num'); el.textContent = card[i]; }
+    const text = i === 12 ? 'FREE' : String(card[i]);
+    if (el.textContent !== text) el.textContent = text;
+    cls.push(i === 12 ? 'free' : 'num');
     if (targets.has(i)) cls.push(marked[i] ? 'got' : 'target');
     else if (i !== 12 && marked[i]) cls.push('marked');
     if (bingoCells.has(i)) cls.push('bingo');
-    if (justPopped.has(i)) cls.push('pop');
     if (hot.has(i)) cls.push('hot');
     if (wild && !finished && !marked[i]) cls.push('pickable');
     el.className = cls.join(' ');
-    board.appendChild(el);
-  }
+    // 重新觸發 pop 動畫：先移除 class、強制重排，再加回去
+    if (justPopped.has(i)){ void el.offsetWidth; el.classList.add('pop'); }
+  });
   justPopped = new Set();
 
   const h = $('history');
@@ -673,8 +681,13 @@ $('soundBtn').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.key === ' '){
+    // 結算視窗開著、焦點在其中按鈕上時，交給瀏覽器處理（空白鍵＝按下「下一關」等按鈕）
+    if ($('overlay').classList.contains('show')){
+      if (!(e.target.closest && e.target.closest('#overlay button'))) e.preventDefault();
+      return;
+    }
     e.preventDefault();
-    if (!$('overlay').classList.contains('show')) draw();
+    draw();
   }
 });
 
